@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Runner - Mini O'yin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="game-wrapper">
+      <h1>⚡ Neon Runner</h1>
+
+      <canvas id="game" width="320" height="420"></canvas>
+
+      <div class="info">
+        <span>Score: <b id="score">0</b></span>
+        <span>Speed: <b id="speed">1</b></span>
+      </div>
+
+      <div class="hint">← → harakat | ↑ sakrash</div>
+
+      <div class="game-over" id="gameOver">
+        <h2>O'yin tugadi 💥</h2>
+        <p>Score: <span id="finalScore">0</span></p>
+        <br />
+        <button onclick="restart()">Qayta boshlash</button>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      const scoreEl = document.getElementById("score");
+      const speedEl = document.getElementById("speed");
+      const gameOverEl = document.getElementById("gameOver");
+      const finalScoreEl = document.getElementById("finalScore");
+
+      let gameRunning = true;
+      let score = 0;
+      let speed = 2;
+
+      const player = {
+        x: 150,
+        y: 350,
+        w: 30,
+        h: 30,
+        vy: 0,
+        jump: false,
+      };
+
+      let obstacles = [];
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") player.x -= 25;
+        if (e.key === "ArrowRight") player.x += 25;
+        if (e.key === "ArrowUp" && !player.jump) {
+          player.vy = -12;
+          player.jump = true;
+        }
+      });
+
+      function spawnObstacle() {
+        obstacles.push({
+          x: Math.random() * 280,
+          y: -30,
+          size: 20 + Math.random() * 20,
+        });
+      }
+
+      function update() {
+        if (!gameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Player physics
+        player.vy += 0.6;
+        player.y += player.vy;
+
+        if (player.y > 350) {
+          player.y = 350;
+          player.vy = 0;
+          player.jump = false;
+        }
+
+        ctx.fillStyle = "#00f2fe";
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#00f2fe";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+
+        // Obstacles
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#ff5c7c";
+        ctx.fillStyle = "#ff5c7c";
+
+        obstacles.forEach((o, i) => {
+          o.y += speed;
+          ctx.fillRect(o.x, o.y, o.size, o.size);
+
+          // Collision
+          if (
+            player.x < o.x + o.size &&
+            player.x + player.w > o.x &&
+            player.y < o.y + o.size &&
+            player.y + player.h > o.y
+          ) {
+            endGame();
+          }
+
+          if (o.y > canvas.height) {
+            obstacles.splice(i, 1);
+            score++;
+          }
+        });
+
+        // HUD
+        scoreEl.textContent = score;
+        speedEl.textContent = speed;
+
+        if (score % 10 === 0 && score !== 0) speed += 0.01;
+
+        if (Math.random() < 0.02) spawnObstacle();
+
+        requestAnimationFrame(update);
+      }
+
+      function endGame() {
+        gameRunning = false;
+        finalScoreEl.textContent = score;
+        gameOverEl.style.display = "flex";
+      }
+
+      function restart() {
+        obstacles = [];
+        score = 0;
+        speed = 2;
+        gameRunning = true;
+        player.x = 150;
+        player.y = 350;
+        gameOverEl.style.display = "none";
+        update();
+      }
+
+      update();
+    </script>
+  </body>
+</html>
